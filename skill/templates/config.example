@@ -1,0 +1,33 @@
+# oshi-hookvoice の設定ファイル（置き場所: ~/.config/oshi-hookvoice/config）
+#
+# 書き方: キー = 値。行頭の # と「空白 + #」から後ろはコメント
+# 音声ファイルは sound_dir のフォルダーからの相対パスで書く。「a.wav | b.wav」のように | で区切ると、鳴るたびにその中から1つをランダムに選ぶ
+# 値を書かないキーのイベントでは鳴らない
+
+# システムボイスを入れたフォルダー。WSL では D:\voices のような Windows 形式でも読める
+sound_dir =
+
+# 音量（1〜100）。端末で oshi-hookvoice.sh volume を実行すると十字キーで合わせられる
+volume = 50
+
+# 音量を合わせるときに Space で鳴らす音（省略すると sound.stop から1つ）
+test_sound =
+
+# 応答完了時（応答1回につき次のどれか1つが鳴る。承認待ちで止まったときも応答1回と数える）
+sound.stop       =   # 応答完了
+sound.block      =   # 危険な操作をブロック
+sound.fail       =   # エラーで中断
+sound.notify     =   # 承認待ち
+
+# 作業中（応答の完了を待たずに鳴る）
+sound.commit     =   # コミット完了
+sound.helper-in  =   # 委譲開始（Claude Code から Codex に作業を依頼した）
+sound.helper-out =   # 委譲完了（Codex に依頼した作業が終わった）
+
+# セッション
+sound.start      =   # セッション開始
+sound.end        =   # セッション終了
+sound.compact    =   # /compact 完了
+
+# 追加したイベント（行末のコメントが鳴らすタイミング）
+# sound.custom1  = a.wav  # テストがすべて通ったとき

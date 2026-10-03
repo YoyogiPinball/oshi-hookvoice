@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>システムボイス割り当てフォーム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&family=Zen+Maru+Gothic:wght@500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #fffefa;
+    --dot: #dcebfb;
+    --ink: #2f2a45;
+    --ink-2: #57536d;
+    --line: #2f2a45;
+    --pink: #ff9cc5;
+    --pink-soft: #ffe6f0;
+    --mint: #8be3d3;
+    --mint-soft: #dcf7f1;
+    --lemon: #fff08a;
+    --sky: #a8dcff;
+    --sky-soft: #e6f4ff;
+    --card: #ffffff;
+    --shadow: 4px 4px 0 var(--sky);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  /* 文字組み: ja-web-typography スキルの base.css（デジタル庁デザインシステムの数値）に合わせる */
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 1.75;
+    line-break: strict;
+    overflow-wrap: break-word;
+    background:
+      radial-gradient(circle at 8% 4%, var(--pink-soft) 0 120px, transparent 121px),
+      radial-gradient(circle at 96% 12%, var(--sky-soft) 0 90px, transparent 91px),
+      radial-gradient(circle at 88% 92%, var(--mint-soft) 0 110px, transparent 111px),
+      radial-gradient(var(--dot) 1.4px, transparent 1.5px) 0 0 / 20px 20px,
+      var(--paper);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  h1, h2, h3 { text-wrap: balance; word-break: auto-phrase; }
+  p, li { text-wrap: pretty; word-break: auto-phrase; }
+  .kana-word { word-break: keep-all; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 40px 16px 64px; }
+
+  .display { font-family: "M PLUS Rounded 1c", "Zen Maru Gothic", sans-serif; font-weight: 800; }
+
+  header { display: grid; gap: 8px; margin-bottom: 32px; }
+  h1 { font-size: clamp(28px, 5vw, 38px); line-height: 1.4; margin: 0 0 4px; letter-spacing: .02em; }
+  /* 意図した2行組み（ja-web-typography の例外）。狭い画面では「システムボイス／割り当てフォーム」の境目でだけ折る */
+  h1 { word-break: normal; }
+  .h1-line { display: inline-block; }
+  h1 .hl { background: linear-gradient(transparent 60%, var(--lemon) 60%); padding: 0 4px; }
+  .lead { margin: 0; max-width: 40em; }
+  .lead.note { font-size: 14px; color: var(--ink-2); }
+
+  .panel {
+    background: var(--card); border: 2px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 18px;
+  }
+  .step { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: 18px; line-height: 1.6; }
+  .step b {
+    display: inline-grid; place-items: center; width: 30px; height: 30px; flex: none;
+    border-radius: 50%; background: var(--pink); color: #2f2a45; border: 2px solid var(--line); font-size: 15px;
+  }
+
+  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .layout > * { min-width: 0; }
+  .side { position: sticky; top: 16px; display: grid; gap: 24px; }
+  @media (max-width: 860px) { .side { position: static; } }
+
+  button {
+    font: inherit; font-weight: 700; color: #2f2a45; cursor: pointer;
+    border: 2px solid var(--line); border-radius: 12px; background: var(--mint);
+    padding: 8px 14px; box-shadow: 3px 3px 0 var(--line);
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: transform .12s ease, box-shadow .12s ease, background-color .2s ease;
+  }
+  button:hover { background: var(--lemon); }
+  button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--line); }
+  button:focus-visible, input:focus-visible, .event-input:focus-visible, textarea:focus-visible, a:focus-visible {
+    outline: 3px solid var(--pink); outline-offset: 2px;
+  }
+  svg.i { width: 18px; height: 18px; flex: none; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  .folder-name { margin: 10px 0 0; font-size: 14px; color: var(--ink-2); }
+  .folder-name code { font-family: "JetBrains Mono", monospace; color: var(--ink); }
+
+  .path-label { display: block; font-weight: 700; font-size: 14px; margin: 14px 0 4px; }
+  .path-input {
+    width: 100%; font: 14px/1.6 "JetBrains Mono", monospace; color: var(--ink);
+    background: var(--paper); border: 2px solid var(--line); border-radius: 12px; padding: 8px 10px;
+  }
+  .path-input:placeholder-shown { border-color: #e2629a; background: var(--pink-soft); }
+  .files { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; max-height: 46vh; overflow: auto; }
+  .file {
+    display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 8px;
+    padding: 6px 8px; border: 2px solid var(--line); border-radius: 12px; background: var(--paper);
+  }
+  .file .name { font-size: 14px; line-height: 1.5; }
+  .file .dur { font-family: "JetBrains Mono", monospace; font-size: 14px; color: var(--ink-2); }
+  .play {
+    width: 34px; height: 34px; padding: 0; justify-content: center; border-radius: 50%;
+    background: var(--pink); box-shadow: 2px 2px 0 var(--line);
+  }
+  .play.on { background: var(--lemon); }
+  .empty { font-size: 14px; color: var(--ink-2); margin: 10px 0 0; }
+
+  .vol { display: grid; grid-template-columns: 1fr 52px; align-items: center; gap: 10px; }
+  .vol output { font-family: "JetBrains Mono", monospace; text-align: right; }
+  input[type=range] { width: 100%; accent-color: var(--pink); cursor: pointer; }
+  .hint { font-size: 14px; color: var(--ink-2); margin: 8px 0 0; }
+
+  .rules { list-style: none; margin: -2px 0 20px; padding: 0; display: grid; gap: 2px; font-size: 14px; color: var(--ink-2); }
+  .rules li { padding-left: 1.2em; position: relative; }
+  .rules li::before { content: ""; position: absolute; left: .2em; top: .7em; width: .5em; height: .5em; border-radius: 50%; background: var(--pink); }
+
+  .pick-panel { margin-bottom: 24px; }
+  .group { margin: 0 0 24px; }
+  .group:last-child { margin-bottom: 0; }
+  .pick-panel .event { box-shadow: 3px 3px 0 var(--sky-soft); }
+  .group h2 { font-size: 17px; line-height: 1.7; margin: 0 0 2px; display: flex; align-items: center; gap: 10px; }
+  .group h2::after { content: ""; flex: 1; border-top: 2px dashed var(--sky); }
+  .group > p { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); }
+  .events { display: grid; gap: 12px; }
+  .event {
+    background: var(--card); border: 2px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 12px 14px;
+    animation: pop .35s ease both;
+  }
+  .event-head { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
+  .event-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+  .event-name { font-weight: 700; font-size: 17px; }
+  .event-hook { font-family: "JetBrains Mono", monospace; font-size: 14px; color: var(--ink-2); }
+  .event-title .event-desc { flex-basis: 100%; font-size: 14px; color: var(--ink-2); }
+  .try { flex: none; white-space: nowrap; padding: 4px 10px; font-size: 14px; color: var(--ink); background: var(--paper); box-shadow: 2px 2px 0 var(--line); }
+  .try:hover { color: #2f2a45; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .event-head + .chips { margin-top: 10px; }
+  .chip {
+    font-size: 14px; font-weight: 700; padding: 4px 12px; border-radius: 999px;
+    color: var(--ink); background: var(--paper); box-shadow: none; border: 2px solid var(--line);
+  }
+  .chip:hover { background: var(--pink-soft); }
+  .chip[aria-pressed="true"] { color: #2f2a45; background: var(--pink); box-shadow: 2px 2px 0 var(--line); }
+  .chip:active { transform: none; box-shadow: none; }
+  .event-input {
+    flex: 1 1 14em; min-width: 0; width: 100%; font: inherit; font-weight: 700; font-size: 17px; color: var(--ink);
+    background: var(--paper); border: 2px solid var(--line); border-radius: 12px; padding: 4px 10px;
+  }
+  .event-input:placeholder-shown { border-color: #e2629a; background: var(--pink-soft); }
+  .event-head.custom { align-items: center; flex-wrap: wrap; }
+  .event-head.custom .event-title { flex: 1 1 14em; min-width: 0; }
+  .event-field-label { flex-basis: 100%; font-size: 14px; font-weight: 700; }
+  .head-btns { display: flex; gap: 6px; flex: none; }
+  .add { margin-top: 12px; background: var(--paper); }
+  .badge { font-size: 14px; font-weight: 700; padding: 0 8px; border-radius: 999px; background: var(--mint-soft); border: 1.5px solid var(--line); }
+
+  .out label { display: block; font-weight: 700; margin: 14px 0 4px; }
+  .out textarea {
+    width: 100%; resize: vertical;
+    font: 14px/1.6 "JetBrains Mono", monospace; color: var(--ink);
+    background: var(--paper); border: 2px solid var(--line); border-radius: 12px; padding: 10px;
+  }
+  #extra { min-height: 90px; font-family: "Zen Maru Gothic", sans-serif; }
+  #output { min-height: 260px; }
+  .out-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
+  .copied { font-size: 14px; color: var(--ink-2); }
+
+  footer { margin-top: 48px; padding-top: 20px; border-top: 2px dashed var(--sky); font-size: 14px; color: var(--ink-2); text-align: center; }
+  .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 24px; margin: 0; }
+  .links a, .credit a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--pink); text-decoration-thickness: 2px; text-underline-offset: 4px; border-radius: 4px; }
+  .links a:hover, .credit a:hover { color: #d9477f; }
+  .credit { margin: 10px 0 0; }
+
+  @keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 class="display"><span class="h1-line"><span class="hl">システムボイス</span></span><span class="h1-line">割り当てフォーム</span></h1>
+    <p class="lead">Claude Code・Codex の応答完了などのタイミング（イベント）に鳴らす音を、システムボイスを入れたフォルダーから選ぶフォームです。</p>
+    <p class="lead note">入力内容は AI に渡す回答の作成のみに使います。選択したファイルはブラウザの中で読み込むだけで外部には送信しません。</p>
+  </header>
+
+  <div class="layout">
+    <aside class="side">
+      <section class="panel" aria-labelledby="s1">
+        <h2 class="step display" id="s1"><b>1</b><span>フォルダーを選択</span></h2>
+        <button type="button" id="pick">
+          <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          フォルダーを選択
+        </button>
+        <!-- showDirectoryPicker が使えないブラウザ（Firefox・Safari）向けの予備。こちらはブラウザの表示が「アップロード」になる -->
+        <input type="file" id="folder" class="sr-only" webkitdirectory multiple tabindex="-1" aria-hidden="true">
+        <label class="path-label" for="dirPath">フォルダーの場所（フルパス）</label>
+        <input type="text" id="dirPath" class="path-input" placeholder="例）D:\voices\推しのシステムボイス" autocomplete="off" spellcheck="false">
+        <p class="folder-name" id="folderName" hidden></p>
+        <p class="hint">ブラウザからはフォルダーの場所を取得できないため、手で入力してください。エクスプローラーのアドレスバーからコピーできます。</p>
+        <ul class="files" id="files" aria-label="見つかった音声ファイル"></ul>
+        <p class="empty" id="empty" hidden>音声ファイル（wav・mp3・ogg・oga・m4a・flac・aac）が見つかりませんでした。</p>
+      </section>
+
+      <section class="panel" aria-labelledby="s2">
+        <h2 class="step display" id="s2"><b>2</b><span>音量</span></h2>
+        <div class="vol">
+          <input type="range" id="vol" min="1" max="100" value="50" aria-label="音量（1〜100）">
+          <output id="volOut" for="vol">50</output>
+        </div>
+        <p class="hint">ファイルの試聴もこの音量で鳴ります。音量は導入後にも変更できます。</p>
+      </section>
+    </aside>
+
+    <main>
+      <section class="panel pick-panel" aria-labelledby="s3">
+      <h2 class="step display" id="s3"><b>3</b><span>イベントごとに音を選択</span></h2>
+      <ul class="rules">
+        <li>2つ以上選択すると鳴るたびにランダムで1つ鳴ります</li>
+        <li>何も選択しないイベントでは鳴りません</li>
+      </ul>
+      <div id="groups"></div>
+      </section>
+
+      <section class="panel out" aria-labelledby="s4">
+        <h2 class="step display" id="s4"><b>4</b><span>AI に渡す回答</span></h2>
+        <p class="hint" style="margin-top:0">コピーして Claude Code か Codex に貼り付けてください。導入の手順書を読むよう AI に頼む一文も回答の先頭に入っています。</p>
+        <label for="extra">AI への補足（任意）</label>
+        <textarea id="extra" placeholder="例）Codex は使っていません。"></textarea>
+        <label for="output">回答</label>
+        <textarea id="output" readonly></textarea>
+        <div class="out-actions">
+          <button type="button" id="copy">
+            <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            回答をコピー
+          </button>
+          <span class="copied" id="copied" role="status"></span>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <nav class="links" aria-label="関連リンク">
+      <a href="https://github.com/YoyogiPinball/oshi-hookvoice" target="_blank" rel="noopener">リポジトリ（GitHub）</a>
+      <a href="https://yoyogipinball.github.io/" target="_blank" rel="noopener">作者のポートフォリオ</a>
+    </nav>
+  </footer>
+</div>
+
+<script>
+const EVENTS = [
+  { group: "応答完了時", note: "応答1回につき次のどれか1つが鳴ります。承認待ちで止まったときもそこで応答1回と数えます。", items: [
+    { key: "stop", hook: "Stop",  title: "応答完了",             desc: "", multi: true },
+    { key: "block", hook: "PermissionDenied", title: "危険な操作をブロック", desc: "auto モードの判定で操作が拒否されたとき。Codex では鳴りません" },
+    { key: "fail", hook: "StopFailure",  title: "エラーで中断",         desc: "API エラーなどで応答が止まったとき。Codex では鳴りません" },
+    { key: "notify", hook: "Notification",     title: "承認待ち",     desc: "コマンドの実行やファイル編集の承認を求められたとき。Claude Code では、約6秒何も入力しなかったときに鳴ります" },
+  ]},
+  { group: "作業中", note: "応答の完了を待たずに鳴ります。", items: [
+    { key: "commit", hook: "PostToolUse: Bash の git commit",     title: "コミット完了", desc: "" },
+    { key: "helper-in", hook: "PreToolUse",  title: "委譲開始",     desc: "Claude Code から Codex に作業を依頼したとき。Claude Code 側で鳴ります" },
+    { key: "helper-out", hook: "PostToolUse", title: "委譲完了",     desc: "Claude Code から Codex に依頼した作業が終わったとき。Claude Code 側で鳴ります。バックグラウンドで実行した codex exec では鳴りません" },
+  ]},
+  { group: "セッション", note: "", items: [
+    { key: "start", hook: "SessionStart",   title: "セッション開始", desc: "起動したときと、前のセッションを再開したとき。Codex では最初のメッセージを送ったとき" },
+    { key: "end", hook: "SessionEnd",     title: "セッション終了", desc: "Codex では /exit で閉じた時点では鳴りません" },
+    { key: "compact", hook: "PostCompact: manual", title: "/compact 完了",  desc: "手動で実行したときのみ" },
+  ]},
+];
+
+const AUDIO_EXT = /\.(wav|mp3|ogg|oga|m4a|flac|aac)$/i;
+let files = [];            // { rel, url, dur }
+let folderName = "";
+const assign = {};         // key -> Set(rel)
+EVENTS.forEach(g => g.items.forEach(e => assign[e.key] = new Set()));
+const customs = [];        // 追加したイベント { key, title, hook: "", custom: true }
+let customSeq = 0;
+
+const $ = id => document.getElementById(id);
+const player = new Audio();
+let playingBtn = null;
+const vol = () => Number($("vol").value);
+
+function play(url, btn) {
+  if (playingBtn === btn && !player.paused) { player.pause(); setPlaying(null); return; }
+  player.src = url;
+  player.volume = vol() / 100;
+  player.currentTime = 0;
+  player.play().catch(() => {});
+  setPlaying(btn);
+}
+function setPlaying(btn) {
+  if (playingBtn) playingBtn.classList.remove("on");
+  playingBtn = btn;
+  if (btn) btn.classList.add("on");
+}
+player.addEventListener("ended", () => setPlaying(null));
+
+const ICON_PLAY = '<svg class="i" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+const fmt = sec => isFinite(sec) ? sec.toFixed(1) + "s" : "--";
+
+// フォルダーの選択。showDirectoryPicker（Chrome・Edge）ならダイアログの表示が「フォルダーを選択」になる。
+// 使えないブラウザでは input[webkitdirectory] に切り替える（表示は「アップロード」になるが、送信はしない）
+$("pick").addEventListener("click", async () => {
+  if (!window.showDirectoryPicker) { $("folder").click(); return; }
+  try {
+    const dir = await window.showDirectoryPicker({ mode: "read" });
+    const list = [];
+    await walk(dir, "", list);
+    load(dir.name, list);
+  } catch (e) {
+    if (e.name !== "AbortError") $("folder").click();
+  }
+});
+async function walk(dir, prefix, out) {
+  for await (const [name, handle] of dir.entries()) {
+    if (handle.kind === "file") {
+      if (AUDIO_EXT.test(name)) out.push({ rel: prefix + name, file: await handle.getFile() });
+    } else {
+      await walk(handle, prefix + name + "/", out);
+    }
+  }
+}
+$("folder").addEventListener("change", ev => {
+  const all = [...ev.target.files];
+  const name = all.length ? all[0].webkitRelativePath.split("/")[0] : "";
+  load(name, all.filter(f => AUDIO_EXT.test(f.name))
+    .map(f => ({ rel: f.webkitRelativePath.split("/").slice(1).join("/"), file: f })));
+});
+
+function load(name, list) {
+  files.forEach(f => URL.revokeObjectURL(f.url));
+  folderName = name;
+  files = list
+    .map(({ rel, file }) => ({ rel, url: URL.createObjectURL(file), dur: NaN }))
+    .sort((a, b) => a.rel.localeCompare(b.rel, "ja", { numeric: true }));
+  Object.values(assign).forEach(s => s.clear());
+  renderFiles();
+  renderGroups();
+  render();
+  files.forEach(f => {
+    const a = new Audio();
+    a.preload = "metadata";
+    a.src = f.url;
+    a.addEventListener("loadedmetadata", () => { f.dur = a.duration; renderFiles(); });
+  });
+}
+
+function renderFiles() {
+  $("folderName").hidden = !folderName;
+  if (folderName) {
+    $("folderName").replaceChildren("選択中: ", Object.assign(document.createElement("code"), { textContent: folderName }));
+  }
+  $("empty").hidden = !folderName || files.length > 0;
+  $("files").replaceChildren(...files.map(f => {
+    const li = document.createElement("li");
+    li.className = "file";
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "play"; b.innerHTML = ICON_PLAY;
+    b.setAttribute("aria-label", f.rel + " を試聴");
+    b.addEventListener("click", () => play(f.url, b));
+    const n = document.createElement("span"); n.className = "name"; n.textContent = f.rel;
+    const d = document.createElement("span"); d.className = "dur"; d.textContent = fmt(f.dur);
+    li.append(b, n, d);
+    return li;
+  }));
+}
+
+function renderGroups() {
+  $("groups").replaceChildren(...EVENTS.map(g => {
+    const sec = document.createElement("section");
+    sec.className = "group";
+    const h = document.createElement("h2"); h.className = "display";
+    h.append(Object.assign(document.createElement("span"), { textContent: g.group }));
+    const box = document.createElement("div"); box.className = "events";
+    g.items.forEach((e, i) => box.append(eventCard(e, i)));
+    sec.append(h);
+    if (g.note) sec.append(Object.assign(document.createElement("p"), { textContent: g.note }));
+    sec.append(box);
+    return sec;
+  }), customGroup());
+  keepKana($("groups"));
+}
+
+// 決まったイベント以外に鳴らしたいタイミングを、利用者が自由に足せる欄
+function customGroup() {
+  const sec = document.createElement("section");
+  sec.className = "group";
+  const h = document.createElement("h2"); h.className = "display";
+  h.append(Object.assign(document.createElement("span"), { textContent: "追加したイベント" }));
+  sec.append(h, Object.assign(document.createElement("p"), { textContent: "上にないタイミングで鳴らしたいときに追加します。" }));
+  const box = document.createElement("div"); box.className = "events";
+  customs.forEach((e, i) => box.append(eventCard(e, i)));
+  const add = document.createElement("button");
+  add.type = "button"; add.className = "add"; add.textContent = "＋ イベントを追加";
+  add.addEventListener("click", () => {
+    const e = { key: "custom" + (++customSeq), title: "", hook: "", custom: true };
+    customs.push(e);
+    assign[e.key] = new Set();
+    renderGroups();
+    render();
+    document.querySelector('[data-key="' + e.key + '"] .event-input').focus();
+  });
+  sec.append(box, add);
+  return sec;
+}
+
+function eventCard(e, i) {
+  const card = document.createElement("div");
+  card.className = "event";
+  card.dataset.key = e.key;
+  card.style.animationDelay = (i * 40) + "ms";
+  const head = document.createElement("div"); head.className = "event-head";
+  let t = document.createElement("div"); t.className = "event-title";
+  if (e.custom) {
+    head.classList.add("custom");
+    const inputId = "event-title-" + e.key;
+    const label = Object.assign(document.createElement("label"), {
+      className: "event-field-label", htmlFor: inputId, textContent: "鳴らすタイミング",
+    });
+    const input = Object.assign(document.createElement("input"), {
+      id: inputId,
+      type: "text", className: "event-input", value: e.title, placeholder: "例）テストがすべて通ったとき",
+    });
+    input.addEventListener("input", () => { e.title = input.value; render(); });
+    t.append(label, input);
+  } else {
+    t.append(Object.assign(document.createElement("span"), { className: "event-name", textContent: e.title }));
+    t.append(Object.assign(document.createElement("span"), { className: "event-hook", textContent: "（" + e.hook + "）" }));
+  }
+  if (e.multi) t.append(Object.assign(document.createElement("span"), { className: "badge", textContent: "音を2つ以上" }));
+  if (e.desc) t.append(Object.assign(document.createElement("span"), { className: "event-desc", textContent: e.desc }));
+  const tryBtn = document.createElement("button");
+  tryBtn.type = "button"; tryBtn.className = "try"; tryBtn.innerHTML = ICON_PLAY + "試聴";
+  tryBtn.disabled = assign[e.key].size === 0;
+  tryBtn.setAttribute("aria-label", (e.title || "追加したイベント") + " の音を試聴");
+  tryBtn.addEventListener("click", () => {
+    const sel = [...assign[e.key]];
+    if (!sel.length) return;
+    const rel = sel[Math.floor(Math.random() * sel.length)];
+    play(files.find(f => f.rel === rel).url, tryBtn);
+  });
+  if (e.custom) {
+    const del = document.createElement("button");
+    del.type = "button"; del.className = "try"; del.textContent = "削除";
+    del.setAttribute("aria-label", (e.title || "追加したイベント") + " を削除");
+    del.addEventListener("click", () => {
+      customs.splice(customs.indexOf(e), 1);
+      delete assign[e.key];
+      renderGroups();
+      render();
+    });
+    const btns = document.createElement("div"); btns.className = "head-btns";
+    btns.append(tryBtn, del);
+    head.append(t, btns);
+  } else {
+    head.append(t, tryBtn);
+  }
+  const chips = document.createElement("div"); chips.className = "chips";
+  chips.setAttribute("role", "group"); chips.setAttribute("aria-label", (e.title || "追加したイベント") + " に使う音");
+  files.forEach(f => {
+    const c = document.createElement("button");
+    c.type = "button"; c.className = "chip"; c.textContent = f.rel;
+    c.setAttribute("aria-pressed", assign[e.key].has(f.rel));
+    c.addEventListener("click", () => {
+      const s = assign[e.key];
+      s.has(f.rel) ? s.delete(f.rel) : s.add(f.rel);
+      c.setAttribute("aria-pressed", s.has(f.rel));
+      tryBtn.disabled = s.size === 0;
+      render();
+    });
+    chips.append(c);
+  });
+  card.append(head);
+  if (files.length) card.append(chips);
+  return card;
+}
+
+function render() {
+  const pad = s => s.padEnd(16, " ");
+  const dirPath = $("dirPath").value.trim();
+  const lines = [
+    "# oshi-hookvoice 割り当てフォームの回答",
+    "oshi-hookvoice リポジトリの skill/SKILL.md に従ってこの回答のとおりに導入してください。リポジトリ: https://github.com/YoyogiPinball/oshi-hookvoice",
+    ...(dirPath ? [] : ["# ※ フォルダーの場所が未入力です"]),
+    "sound_dir = " + dirPath,
+    "volume = " + vol(),
+    "",
+  ];
+  EVENTS.forEach(g => {
+    lines.push("# " + g.group);
+    g.items.forEach(e => lines.push(pad("sound." + e.key) + " = " + [...assign[e.key]].join(" | ")));
+  });
+  if (customs.length) {
+    lines.push("# 追加したイベント（行末のコメントが鳴らすタイミング）");
+    customs.forEach(e => lines.push(pad("sound." + e.key) + " = " + [...assign[e.key]].join(" | ")
+      + "  # " + (e.title.trim() || "※ タイミングが未入力です")));
+  }
+  const extra = $("extra").value.trim();
+  if (extra) lines.push("", "# 補足", ...extra.split("\n"));
+  $("output").value = lines.join("\n");
+}
+
+$("vol").addEventListener("input", () => {
+  $("volOut").value = vol();
+  player.volume = vol() / 100;
+  render();
+});
+$("extra").addEventListener("input", render);
+$("dirPath").addEventListener("input", render);
+
+$("copy").addEventListener("click", async () => {
+  const text = $("output").value;
+  try { await navigator.clipboard.writeText(text); }
+  catch { $("output").select(); document.execCommand("copy"); }
+  $("copied").textContent = "コピーしました";
+  setTimeout(() => $("copied").textContent = "", 2000);
+});
+
+// カタカナ語を行の途中で割らない（ja-web-typography スキルの keep-kana.js と同じ処理）。
+// カードは後から描き直すので、描くたびに呼ぶ
+const KANA_TARGET = "h1, h2, h3, p, li, .event-desc";
+const KANA_SKIP = ".kana-word, code, pre, script, style, textarea, button";
+const KANA_RUN = /[ァ-ヺー]{2,}/g;
+function keepKana(scope) {
+  for (const root of scope.querySelectorAll(KANA_TARGET)) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: n => n.parentElement.closest(KANA_SKIP) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(node => {
+      const text = node.data;
+      if (text.search(KANA_RUN) === -1) return;
+      const frag = document.createDocumentFragment();
+      let last = 0;
+      for (const m of text.matchAll(KANA_RUN)) {
+        if (m.index > last) frag.append(text.slice(last, m.index));
+        frag.append(Object.assign(document.createElement("span"), { className: "kana-word", textContent: m[0] }));
+        last = m.index + m[0].length;
+      }
+      if (last < text.length) frag.append(text.slice(last));
+      node.replaceWith(frag);
+    });
+  }
+}
+
+renderGroups();
+render();
+keepKana(document.querySelector("header"));
+keepKana(document.querySelector(".side"));
+keepKana(document.querySelector("main"));
+keepKana(document.querySelector("footer"));
+</script>
+</body>
+</html>
