@@ -1,6 +1,6 @@
 ---
 name: oshi-hookvoice
-description: 推しのシステムボイスを Claude Code・Codex の通知音として鳴らす仕組みを、利用者の環境を調べて導入・変更・削除する。割り当てフォームの回答（「# oshi-hookvoice 割り当てフォームの回答」で始まるテキスト）を渡されたとき、またはシステムボイスや通知音の hook の導入を頼まれたときに使う。
+description: 推しのシステムボイスを Claude Code・Codex の通知音として鳴らす仕組みを、利用者の環境を調べて導入・変更・削除する。割り当てフォームの回答（「# oshi-hookvoice 割り当てフォームの回答」で始まるテキスト）を渡されたとき、またはシステムボイスや通知音の hook の導入・音の差し替え・音量の変更・取り外しを頼まれたときに使う。
 ---
 
 # oshi-hookvoice — システムボイスの導入
@@ -75,6 +75,7 @@ Codex は使っていません。
 | スクリプト | `~/.local/bin/oshi-hookvoice.sh`（実行権限を付ける） |
 | 設定ファイル | `~/.config/oshi-hookvoice/config`（`templates/config.example` を元に、回答の値を入れる） |
 | 状態ファイル | `~/.local/state/oshi-hookvoice/`（スクリプトが自動で作る） |
+| このスキル | Claude Code: `~/.claude/skills/oshi-hookvoice/`。Codex: `~/.agents/skills/oshi-hookvoice/`。使っている AI の分だけ置く。あとで「音を替えたい」「外したい」と頼まれたときに AI がこの手順を読めるようにするため |
 
 hook の設定は `references/wiring.md` に従う。追加したイベント（`sound.custom1` など）は、行末のコメントに合う hook を選んで提案する。合う hook が無ければ、その旨と代わりの案を示して利用者に決めてもらう。
 
@@ -85,7 +86,8 @@ hook の設定は `references/wiring.md` に従う。追加したイベント（
 
 1. 書き換える設定ファイルをバックアップする（例: `settings.json.bak-<日時>`）
 2. スクリプトと設定ファイルを置く
-3. hook を追記する。JSON は `jq` で編集し、書き終えたら `jq empty <ファイル>` で JSON として読めることを確かめる
+3. このファイルがある `skill/` フォルダーを、中身ごとスキルの置き場所へコピーする（symlink にしない。clone したフォルダーを利用者が消しても使えるようにするため）。置き場所に同名のフォルダーがあれば上書きする
+4. hook を追記する。JSON は `jq` で編集し、書き終えたら `jq empty <ファイル>` で JSON として読めることを確かめる
 
 ### 5. 確かめる
 
@@ -121,7 +123,7 @@ hook の設定は `references/wiring.md` に従う。追加したイベント（
    .hooks |= (with_entries(.value |= map(.hooks |= map(select(.command | test("oshi-hookvoice\\.sh") | not)) | select(.hooks | length > 0))) | with_entries(select(.value | length > 0)))
    ```
 
-2. `~/.local/bin/oshi-hookvoice.sh`・`~/.config/oshi-hookvoice/`・`~/.local/state/oshi-hookvoice/` を、利用者の承認を取って削除する
+2. `~/.local/bin/oshi-hookvoice.sh`・`~/.config/oshi-hookvoice/`・`~/.local/state/oshi-hookvoice/`・このスキル（`~/.claude/skills/oshi-hookvoice/`・`~/.agents/skills/oshi-hookvoice/`）を、利用者の承認を取って削除する
 3. Codex を使っていれば、次の起動で hook の変更が反映される
 
 ## 鳴らし方の仕組み（説明を求められたとき）
