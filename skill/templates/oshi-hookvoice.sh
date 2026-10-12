@@ -241,11 +241,15 @@ post_bash() {
   mkdir -p "$STATE_DIR"
   old=$(cat "$file" 2>/dev/null)
   echo "$head" >"$file"
-  # HEAD は毎回記録し、git commit を実行したコマンドで HEAD が進んだときだけ鳴らす（checkout・pull では鳴らさない）。
-  # 「commit」という語を含むだけのコマンド（git log --grep commit など）では鳴らさない。git と commit の間は -C <dir>・-c <設定> だけ許す
+  # HEAD は毎回記録し、前回の記録から今までにコミットが作られていたときだけ鳴らす（checkout・pull・merge では鳴らさない）。
+  # コマンドの文字列は見ない。git が HEAD の移動ごとに残す記録（reflog）を新しい順に読み、
+  # 前回の HEAD に行き着くまでに「commit」で始まる操作（commit / commit (amend) など）があれば鳴らす。
+  # スクリプトの中のコミットも拾い、「git commit」と書いてあるだけのコマンドでは鳴らない。
+  # 前回の HEAD が直近200件に無いときは、どこからが今回の分か分からないので鳴らさない
   [[ -n "$old" && "$old" != "$head" ]] || return
-  jq -r '.tool_input.command // empty' <<<"$INPUT" 2>/dev/null |
-    grep -qE '(^|[;&|[:space:]])git([[:space:]]+-[Cc][[:space:]]+[^[:space:]]+)*[[:space:]]+commit([[:space:]]|$)' && echo commit
+  git reflog -n 200 --format='%H %gs' 2>/dev/null |
+    awk -v old="$old" '$1 == old { reached = 1; exit } $2 ~ /^commit/ { found = 1 } END { exit !(reached && found) }' &&
+    echo commit
 }
 
 # 応答完了。1応答で1回だけ鳴らす（他の Stop hook が応答の続行を求め、Stop hook がもう一度実行されても2度鳴らさない）
