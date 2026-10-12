@@ -17,7 +17,7 @@
 #   その他        設定ファイルに sound.<イベント> があれば、その場で鳴らす（追加したイベント用）
 #
 # 鳴らし方の原則は「1応答1音」。画面を見ていないセッションの応答がどう終わったか（完了・ブロック・エラー・承認待ち）を音で知るため。
-# 状態ファイルは $STATE_DIR にセッションごとに置き、その応答でブロックがあったか・音を鳴らし終えたかを記録する。
+# 状態ファイルは $STATE_DIR にセッションごとに置き、その応答でブロックがあったか・応答完了を処理したかを記録する。
 # 委譲先（祖先プロセスに claude / codex が2つ以上いる、または Claude Code のサブエージェント）では鳴らさない。
 # hook を呼んだ Claude Code・Codex を待たせないよう、再生は別プロセスで行い、常に exit 0 で返す。
 
@@ -241,9 +241,11 @@ post_bash() {
   mkdir -p "$STATE_DIR"
   old=$(cat "$file" 2>/dev/null)
   echo "$head" >"$file"
-  # HEAD は毎回記録し、commit を含むコマンドで HEAD が進んだときだけ鳴らす（checkout・pull では鳴らさない）
+  # HEAD は毎回記録し、git commit を実行したコマンドで HEAD が進んだときだけ鳴らす（checkout・pull では鳴らさない）。
+  # 「commit」という語を含むだけのコマンド（git log --grep commit など）では鳴らさない。git と commit の間は -C <dir>・-c <設定> だけ許す
   [[ -n "$old" && "$old" != "$head" ]] || return
-  jq -r '.tool_input.command // empty' <<<"$INPUT" 2>/dev/null | grep -qE '\bcommit\b' && echo commit
+  jq -r '.tool_input.command // empty' <<<"$INPUT" 2>/dev/null |
+    grep -qE '(^|[;&|[:space:]])git([[:space:]]+-[Cc][[:space:]]+[^[:space:]]+)*[[:space:]]+commit([[:space:]]|$)' && echo commit
 }
 
 # 応答完了。1応答で1回だけ鳴らす（他の Stop hook が応答の続行を求め、Stop hook がもう一度実行されても2度鳴らさない）

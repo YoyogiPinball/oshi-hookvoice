@@ -22,7 +22,7 @@
 | 承認を求められてもすぐには鳴らない | Claude Code の `Notification`（`permission_prompt`）は、承認の画面が出てから約6秒、何も入力しなかったときに実行される | 仕様どおりの動作。すぐ鳴らしたいときは `PermissionRequest` の hook を使う（作者の環境では未確認） |
 | Claude Code が Codex や `claude -p` を呼ぶと、そちらでも鳴る | 委譲先の AI も同じ hook 設定を読む | 祖先プロセスに claude / codex が2つ以上いたら鳴らさない。サブエージェントは hook 入力の `agent_id` で見分ける |
 | コマンドが失敗するたびに鳴ってうるさい | `grep` の該当なしや `diff` の差分ありも終了コード 1 になる | コマンドの失敗では鳴らさない。Codex の `PostToolUse` はそもそも終了コードを受け取れない |
-| checkout や pull でコミット音が鳴る | HEAD の変化だけで判定している | コマンドに `commit` を含み、かつ HEAD が進んだときだけ鳴らす |
+| checkout や pull でコミット音が鳴る | HEAD の変化だけで判定している | コマンドが `git commit` を実行していて（`git -C <dir> commit` を含む）、かつ HEAD が進んだときだけ鳴らす |
 
 ## Codex
 

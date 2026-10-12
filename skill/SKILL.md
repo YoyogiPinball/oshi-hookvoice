@@ -93,7 +93,7 @@ hook の設定は `references/wiring.md` に従う。追加したイベント（
 
 1. キーごとに音を鳴らす: `oshi-hookvoice.sh test stop`、`oshi-hookvoice.sh test notify` などを、値のあるキーすべてについて実行する。利用者に聞こえたか確かめてもらう
 2. 音量を合わせてもらう: 利用者に端末で `oshi-hookvoice.sh volume` を実行してもらう（↑↓ で ±1、←→ で ±5、Space で試聴、Enter で保存）
-3. hook の入力と同じ形の JSON をスクリプトの標準入力に渡して、1応答1音の判定を確かめる。判定には、セッションごとの状態ファイル（その応答でブロックがあったか・音を鳴らし終えたかの記録）を使う。`OSHI_HOOKVOICE_MUTE=1` を付けると、判定と状態ファイルの更新は行い、再生だけを止める:
+3. hook の入力と同じ形の JSON をスクリプトの標準入力に渡して、1応答1音の判定を確かめる。判定には、セッションごとの状態ファイル（その応答でブロックがあったか・応答完了を処理したかの記録）を使う。`OSHI_HOOKVOICE_MUTE=1` を付けると、判定と状態ファイルの更新は行い、再生だけを止める:
 
    ```bash
    echo '{"session_id":"t"}' | OSHI_HOOKVOICE_MUTE=1 oshi-hookvoice.sh turn-start
